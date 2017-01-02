@@ -8,35 +8,18 @@ import subprocess
 import requests
 import re
 
-def writeData(influxServerData,measurementData,timeStamp):
-	INFLUX_SERVER = str(influxServerData["hostname"])
-	INFLUX_PORT = str(influxServerData["port"])
-	INFLUX_DB = str(influxServerData["database"])
+import handlers as func
 
-	host = str(measurementData[0]).replace(" ", "")
-	device = str(measurementData[1]).replace(" ", "")
-	item = str(measurementData[2]).replace(" ", "")
-	value = str(measurementData[3]).replace(" ", "")
-
-	url = "http://"+INFLUX_SERVER+":"+INFLUX_PORT+"/write?db="+INFLUX_DB+"&precision=s"
-	data = "snmp_data,device="+device+",host="+host+",sensor="+item+" value="+value+" "+str(timeStamp)
-	print(data)
-	requests.post(url, data=data,headers={'Content-Type': 'application/octet-stream'},timeout = 3)
-	pass
-
-def snmpWalk(hostData,oid):
-	SNMP_SERVER = hostData['hostname']
-	SNMP_COMMUNITY = hostData['community']
-
-	p = subprocess.run(["snmpwalk", "-O", "fn", "-v", "2c", "-c", SNMP_COMMUNITY, SNMP_SERVER, oid], stdout=subprocess.PIPE)
-	output = p.stdout.decode('utf8').splitlines()
-	return output
-	pass
-
-def procLoad(influxData,hostData,timeStamp):
+def procLoad(esxHost,valueInsertList,timeStamp):
 	procOID = ".1.3.6.1.2.1.25.3.3.1.2"
 	i = 0
-	output = snmpWalk(hostData,procOID)
+
+	hostname = esxHost.hostname
+	snmpCommunity = esxHost.snmpCommunity
+	snmpVersion = esxHost.snmpVersion
+
+
+	output = func.snmpWalk(hostname,snmpCommunity,snmpVersion,procOID)
 	for line in output:
 		if procOID in line:
 			i += 1
@@ -44,20 +27,26 @@ def procLoad(influxData,hostData,timeStamp):
 			result = re.findall(r'\: (\d*)',line)
 			if result:
 				loadValue = str(result[0])
-				data_procLoad = [hostData['hostname'],cpuCore,"cpu_load",loadValue]
-				writeData(influxData,data_procLoad,timeStamp)
+				data_procLoad = [hostname,cpuCore,"cpu_load",loadValue]
+				# writeData(influxData,data_procLoad,timeStamp)
+				valueInsertList.append(func.getPostData(data_procLoad,timeStamp))
 				# print(cpuCore,loadValue)
 			pass
 		pass
+	return valueInsertList
 
-def VMList(influxData,hostData,timeStamp):
+def VMList(esxHost,valueInsertList,timeStamp):
 	vmInfoOID = ".1.3.6.1.4.1.6876.2.1.1"
 	vmLabelOID = vmInfoOID+".2"
 	vmStateOID = vmInfoOID+".6"
 	vmNames = []
 	powerStates = []
 
-	output = snmpWalk(hostData,".1.3.6.1.4.1.6876.2.1.1")
+	hostname = esxHost.hostname
+	snmpCommunity = esxHost.snmpCommunity
+	snmpVersion = esxHost.snmpVersion
+
+	output = func.snmpWalk(hostname,snmpCommunity,snmpVersion,vmInfoOID)
 
 	for line in output:
 		if vmLabelOID in line:
@@ -75,6 +64,8 @@ def VMList(influxData,hostData,timeStamp):
 		pass
 	for name,state in zip(vmNames,powerStates):
 		binaryState = 1 if state =="powered on" else 0
-		data_VMStates = [hostData['hostname'],name,"vm_state",binaryState]
-		writeData(influxData,data_VMStates,timeStamp)
+		data_VMStates = [hostname,name,"vm_state",binaryState]
+		# writeData(influxData,data_VMStates,timeStamp)
+		valueInsertList.append(func.getPostData(data_VMStates,timeStamp))
 	pass
+	return valueInsertList

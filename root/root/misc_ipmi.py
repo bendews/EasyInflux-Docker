@@ -8,38 +8,16 @@ import subprocess
 import requests
 import re
 
-def writeData(influxServerData,measurementData,timeStamp):
-	INFLUX_SERVER = str(influxServerData["hostname"])
-	INFLUX_PORT = str(influxServerData["port"])
-	INFLUX_DB = str(influxServerData["database"])
+import handlers as func
 
-	host = str(measurementData[0]).replace(" ", "")
-	device = str(measurementData[1]).replace(" ", "")
-	item = str(measurementData[2]).replace(" ", "")
-	value = str(measurementData[3]).replace(" ", "")
-
-	url = "http://"+INFLUX_SERVER+":"+INFLUX_PORT+"/write?db="+INFLUX_DB+"&precision=s"
-	data = "snmp_data,device="+device+",host="+host+",sensor="+item+" value="+value+" "+str(timeStamp)
-	print(data)
-	requests.post(url, data=data,headers={'Content-Type': 'application/octet-stream'},timeout = 3)
-	pass
-
-
-def ipmiTool(hostData):
-	IPMI_SERVER = hostData['hostname']
-	IPMI_USERNAME = hostData['username']
-	IPMI_PASSWORD = hostData['password']
-	
-	p = subprocess.run(["ipmitool", "-H", IPMI_SERVER, "-U", IPMI_USERNAME, "-P", IPMI_PASSWORD, "-I", "lanplus", "sdr", "list", "full"], stdout=subprocess.PIPE)
-	output = p.stdout.decode('utf8').splitlines()
-
-	return output
-	pass
-
-def fanTempMeasure(influxData,hostData,timeStamp):
+def fanTempMeasure(ipmiHost,valueInsertList,timeStamp):
 	measurements = []
 
-	output = ipmiTool(hostData)
+	hostname = ipmiHost.hostname
+	username = ipmiHost.username
+	password = ipmiHost.password
+
+	output = func.ipmiTool(hostname,username,password)
 
 	for line in output:
 		line = line.split("|")
@@ -61,8 +39,9 @@ def fanTempMeasure(influxData,hostData,timeStamp):
 		else:
 			item = "temperature"
 
-		data_fanTemp = [hostData['hostname'],device,item,value]
-		writeData(influxData,data_fanTemp,timeStamp)
+		data_fanTemp = [hostname,device,item,value]
+		valueInsertList.append(func.getPostData(data_fanTemp,timeStamp))
 	pass
+	return valueInsertList
 
 
