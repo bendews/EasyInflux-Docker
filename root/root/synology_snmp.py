@@ -26,6 +26,7 @@ def writeData(influxServerData,measurementData,timeStamp):
 
 	url = "http://"+INFLUX_SERVER+":"+INFLUX_PORT+"/write?db="+INFLUX_DB+"&precision=s"
 	data = "snmp_data,device="+device+",host="+host+",sensor="+item+" value="+value+" "+str(timeStamp)
+	print(data)
 	requests.post(url, data=data,headers={'Content-Type': 'application/octet-stream'},timeout = 3)
 	pass
 
