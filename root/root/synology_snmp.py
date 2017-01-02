@@ -2,7 +2,7 @@
 #  - Ben Dews
 #  - bendews.com
 #  - 30/12/2016
-#  - Script to get IPMI statistics and insert to InfluxDB
+#  - Script to get Synology SNMP statistics and insert to InfluxDB
 ################################
 import subprocess
 import requests
@@ -67,9 +67,6 @@ def diskUsage(synHost,valueInsertList,timeStamp):
 				valueInsertList.append(func.getPostData(data_totalInTB,timeStamp))
 				data_usedInTB = [hostname,volume,"used_storage",usedInTB]
 				valueInsertList.append(func.getPostData(data_usedInTB,timeStamp))
-				# writeData(influxData,data_totalInTB,timeStamp)
-				# writeData(influxData,data_usedInTB,timeStamp)
-				# print(volume,totalInTB,usedInTB)
 				pass
 			pass
 	pass
@@ -103,7 +100,5 @@ def diskTemp(synHost,valueInsertList,timeStamp):
 	for disk,temp in zip(disks,temps):
 		data_diskTemp = [hostname,disk,"temperature",temp]
 		valueInsertList.append(func.getPostData(data_diskTemp,timeStamp))
-		# writeData(influxData,data_diskTemp,timeStamp)
-		# print(disk,temp)
 	pass
 	return valueInsertList

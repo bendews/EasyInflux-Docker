@@ -1,3 +1,10 @@
+################################
+#  - Ben Dews
+#  - bendews.com
+#  - 02/01/2017
+#  - Main loop for EasyInflux script
+################################
+
 import yaml
 import requests
 import logging
@@ -14,79 +21,87 @@ import misc_ipmi
 import host_classes as host
 import handlers as func
 
-SECONDS = 30.0
 
 currentDirectory = os.path.dirname(os.path.abspath(__file__))
 logging.basicConfig(level=logging.DEBUG)
 
+# Round unix time to closest interval period
 def roundTimeToSeconds(unixTime,secondsToRound):
 	return int(round(unixTime / secondsToRound) * secondsToRound)
 
+def listToInfluxDBString(list):
+	length = len(list) - 1
+	influxDBString = ""
+	if length == 0:
+		influxDBString = list[0]
+	else:
+		for value in list[:-1]:
+			influxDBString = influxDBString+value+"\n"
+		pass
+		influxDBString = influxDBString+list[length]
+	return influxDBString
+
+# Load config file
 with open(currentDirectory+"/../config/config.yaml", 'r') as stream:
 	try:
 		config = yaml.load(stream)
 	except yaml.YAMLError as exc:
-		print(exc)
+		logging.error(exc)
+		exit()
+
+# Assign InfluxDB Variables
+INFLUXDB_CONFIG = config["influxdb"]
+# Interval to run script
+INSERT_INTERVAL = float(INFLUXDB_CONFIG["insert_interval"])
+# hostname of influxDB server
+INFLUX_SERVER = str(INFLUXDB_CONFIG["hostname"])
+# API port of influxDB server
+INFLUX_PORT = str(INFLUXDB_CONFIG["port"])
+# Database for values to be inserted into
+INFLUX_DB = str(INFLUXDB_CONFIG["database"])
+# URL used for POST request
+INFLUX_URL = "http://"+INFLUX_SERVER+":"+INFLUX_PORT+"/write?db="+INFLUX_DB+"&precision=s"
 		
 while True:
-	logging.debug("Gathering statistics every "+str(SECONDS)+" seconds")
-	# timeTest = int(round(time.time() / SECONDS) * SECONDS)
-	# timeTest = (math.ceil(time.time() / SECONDS))*SECONDS
-	# timeTest = (math.ceil(time.time() / SECONDS))*SECONDS
-	timeStamp = roundTimeToSeconds(time.time(),SECONDS)
-
+	# Round insert timestamp to interval period
+	timeStamp = roundTimeToSeconds(time.time(),INSERT_INTERVAL)
+	logging.debug("Gathering statistics every "+str(INSERT_INTERVAL)+" seconds")
 	logging.debug("Actual Time:"+datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S'))
-	logging.debug("Timestamp:"+datetime.datetime.fromtimestamp(timeStamp).strftime('%Y-%m-%d %H:%M:%S'))
+	logging.debug("Timestamp for data:"+datetime.datetime.fromtimestamp(timeStamp).strftime('%Y-%m-%d %H:%M:%S'))
 
-	INFLUXDB_CONFIG = config["influxdb"]
 	ESXI_HOSTS = config["esxi_hosts"]
 	IPMI_HOSTS = config["ipmi_hosts"]
 	SYNOLOGY_HOSTS = config["synology_hosts"]
 	UPS_HOSTS = config["ups_hosts"]
 
-	valueInsertList = []
+	valueList = []
 
 	for hostData in ESXI_HOSTS:
-		esxHost = host.EsxHost(hostData["hostname"],hostData["community"],hostData["version"])
-		valueInsertList = esx_snmp.procLoad(esxHost,valueInsertList,timeStamp)
-		valueInsertList = esx_snmp.VMList(esxHost,valueInsertList,timeStamp)
+		esxHost = host.EsxHost(hostData["hostname"],hostData["snmp_community"],hostData["snmp_version"])
+		valueList = esx_snmp.procLoad(esxHost,valueList,timeStamp)
+		valueList = esx_snmp.VMList(esxHost,valueList,timeStamp)
 
 	for hostData in IPMI_HOSTS:
-		ipmiHost = host.IpmiHost(hostData["hostname"],hostData["username"],hostData["password"])
-		valueInsertList = misc_ipmi.fanTempMeasure(ipmiHost,valueInsertList,timeStamp)
+		ipmiHost = host.IpmiHost(hostData["hostname"],hostData["ipmi_username"],hostData["ipmi_password"])
+		valueList = misc_ipmi.fanTempMeasure(ipmiHost,valueList,timeStamp)
 
 	for hostData in SYNOLOGY_HOSTS:
-		synHost = host.SynologyHost(hostData["hostname"],hostData["community"],hostData["version"],hostData["volumes"])
-		valueInsertList = synology_snmp.diskUsage(synHost,valueInsertList,timeStamp)
-		valueInsertList = synology_snmp.diskTemp(synHost,valueInsertList,timeStamp)
+		synHost = host.SynologyHost(hostData["hostname"],hostData["snmp_community"],hostData["snmp_version"],hostData["volumes"])
+		valueList = synology_snmp.diskUsage(synHost,valueList,timeStamp)
+		valueList = synology_snmp.diskTemp(synHost,valueList,timeStamp)
 
 	for hostData in UPS_HOSTS:
-		upsHost = host.UpsHost(hostData["hostname"],hostData["community"],hostData["version"])
-		# print(upsHost.hostname)
-		valueInsertList = ups_snmp.upsPower(upsHost,valueInsertList,timeStamp)
-		# valueInsertList.append(func.getPostData(INFLUXDB_CONFIG,measurementData,timeStamp))
+		upsHost = host.UpsHost(hostData["hostname"],hostData["snmp_community"],hostData["snmp_version"])
+		valueList = ups_snmp.upsPower(upsHost,valueList,timeStamp)
 
-	length = len(valueInsertList) - 1
-	data = ""
-	if length == 0:
-		data = valueInsertList[0]
-	else:
-		for value in valueInsertList[:-1]:
-			data = data+value+"\n"
-			# print(value)
-		pass
-		data = data+valueInsertList[length]
+	# Convert list of insert data into string for POST request
+	INFLUX_DATA = listToInfluxDBString(valueList)
+	# Print collected data
+	logging.debug(INFLUX_DATA)
+	requests.post(INFLUX_URL, data=INFLUX_DATA,headers={'Content-Type': 'application/octet-stream'},timeout = 3)
 
-
-	logging.debug(data)
-
-	INFLUX_SERVER = str(INFLUXDB_CONFIG["hostname"])
-	INFLUX_PORT = str(INFLUXDB_CONFIG["port"])
-	INFLUX_DB = str(INFLUXDB_CONFIG["database"])
-	url = "http://"+INFLUX_SERVER+":"+INFLUX_PORT+"/write?db="+INFLUX_DB+"&precision=s"
-	requests.post(url, data=data,headers={'Content-Type': 'application/octet-stream'},timeout = 3)
-
-	timeToSleep = SECONDS - ((time.time() - timeStamp) % SECONDS)
+	# Delay data collection loop to match interval period
+	timeToSleep = INSERT_INTERVAL - ((time.time() - timeStamp) % INSERT_INTERVAL)
 	logging.info("Statistics gathered, sleeping for "+str(timeToSleep)+" seconds")
 	time.sleep(timeToSleep)
 	pass

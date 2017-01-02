@@ -2,7 +2,7 @@
 #  - Ben Dews
 #  - bendews.com
 #  - 30/12/2016
-#  - Script to get IPMI statistics and insert to InfluxDB
+#  - Script to get UPS SNMP and insert to InfluxDB
 ################################
 import subprocess
 import requests

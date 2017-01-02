@@ -2,7 +2,7 @@
 #  - Ben Dews
 #  - bendews.com
 #  - 30/12/2016
-#  - Script to get IPMI statistics and insert to InfluxDB
+#  - Script to get ESXi SNMP statistics and insert to InfluxDB
 ################################
 import subprocess
 import requests
@@ -28,9 +28,7 @@ def procLoad(esxHost,valueInsertList,timeStamp):
 			if result:
 				loadValue = str(result[0])
 				data_procLoad = [hostname,cpuCore,"cpu_load",loadValue]
-				# writeData(influxData,data_procLoad,timeStamp)
 				valueInsertList.append(func.getPostData(data_procLoad,timeStamp))
-				# print(cpuCore,loadValue)
 			pass
 		pass
 	return valueInsertList
@@ -65,7 +63,6 @@ def VMList(esxHost,valueInsertList,timeStamp):
 	for name,state in zip(vmNames,powerStates):
 		binaryState = 1 if state =="powered on" else 0
 		data_VMStates = [hostname,name,"vm_state",binaryState]
-		# writeData(influxData,data_VMStates,timeStamp)
 		valueInsertList.append(func.getPostData(data_VMStates,timeStamp))
 	pass
 	return valueInsertList
