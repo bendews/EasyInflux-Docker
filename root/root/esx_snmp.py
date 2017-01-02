@@ -41,27 +41,31 @@ def procLoad(influxData,hostData,timeStamp):
 			i += 1
 			cpuCore = "cpu"+str(i)
 			result = re.findall(r'\: (\d*)',line)
-			loadValue = str(result[0])
-			data_procLoad = [hostData['hostname'],cpuCore,"cpu_load",loadValue]
-			writeData(influxData,data_procLoad,timeStamp)
-			# print(cpuCore,loadValue)
+			if result:
+				loadValue = str(result[0])
+				data_procLoad = [hostData['hostname'],cpuCore,"cpu_load",loadValue]
+				writeData(influxData,data_procLoad,timeStamp)
+				# print(cpuCore,loadValue)
 			pass
 		pass
 
 def VMList(influxData,hostData,timeStamp):
+	vmInfoOID = ".1.3.6.1.4.1.6876.2.1.1"
+	vmLabelOID = vmInfoOID+".2"
+	vmStateOID = vmInfoOID+".6"
 	vmNames = []
 	powerStates = []
 
 	output = snmpWalk(hostData,".1.3.6.1.4.1.6876.2.1.1")
 
 	for line in output:
-		if ".1.3.6.1.4.1.6876.2.1.1.2." in line:
+		if vmLabelOID in line:
 			result = re.findall(r'\: (.*)',line)
 			result = str(result[0])
 			result = result.replace('"','')
 			vmNames.append(result)
 			pass
-		if ".1.3.6.1.4.1.6876.2.1.1.6." in line:
+		if vmStateOID in line:
 			result = re.findall(r'\: (.*)',line)
 			result = str(result[0])
 			result = result.replace('"','')

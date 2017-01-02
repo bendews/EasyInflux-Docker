@@ -34,10 +34,12 @@ def snmpWalk(hostData,oid):
 	pass
 
 def upsPower(influxData,hostData,timeStamp):
-	output = snmpWalk(hostData,"1.3.6.1.2.1.33.1")
+	upsInfoOID = "1.3.6.1.2.1.33.1"
+	upsWattsOID = upsInfoOID+".4.4.1.4.1"
+	output = snmpWalk(hostData,upsInfoOID)
 
 	for line in output:
-		if "2.33.1.4.4.1.4.1" in line:
+		if upsWattsOID in line:
 			result = re.findall(r'\: (\d*)',line)
 			upsPower = str(result[0])
 			data_upsPower = [hostData['hostname'],"ActivePower","ups_power",upsPower]
