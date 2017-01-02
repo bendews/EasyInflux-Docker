@@ -1,32 +1,38 @@
 influxdb:
-  hostname: influxdb.bendews.com
-  port: 80
-  database: graphite
+  hostname: "InfluxDB.company.com"
+  port: "2003"
+  database: "easy_influx"
+  insert_interval: "30"
 
 esxi_hosts:
-  - hostname: hm-esx-dell01.bendews.com
-    community: public
-  - hostname: hm-esx-nuc01.bendews.com
-    community: public
-  - hostname: hm-esx-nuc02.bendews.com
-    community: public
+  - hostname: "ESXi-01.company.com"
+    snmp_community: "public"
+    snmp_version: "2c"
+  - hostname: "ESXi-01.company.com"
+    snmp_community: "public"
+    snmp_version: "2c"
+  - hostname: "ESXi-03.company.com"
+    snmp_community: "public"
+    snmp_version: "2c"
 
 synology_hosts:
-  - hostname: hm-data-hp01.bendews.com
-    community: public
+  - hostname: "Synology-01.company.com"
+    snmp_community: "public"
+    snmp_version: "2c"
     volumes:
       - "volume1"
       - "volume2"
       - "volume3"
 
 ipmi_hosts:
-  - hostname: R210ii-MGMT.bendews.com
-    username: root
-    password: 
-  - hostname: HPGen8-MGMT.bendews.com
-    username: Administrator
-    password: 
+  - hostname: "Dell-iDRAC.company.com"
+    ipmi_username: "root"
+    ipmi_password: "password123"
+  - hostname: "HP-iLO.company.com"
+    ipmi_username: "Administrator"
+    ipmi_password: "password123"
 
 ups_hosts:
-  - hostname: 10.1.1.25
-    community: public
+  - hostname: "UPS.company.com"
+    snmp_community: "public"
+    snmp_version: "1"
