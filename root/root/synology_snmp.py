@@ -39,6 +39,11 @@ def snmpWalk(hostData,oid):
 	pass
 
 def diskUsage(influxData,hostData,timeStamp):
+	storageInfoOID = ".1.3.6.1.2.1.25.2.3.1"
+	storageLabelOID = storageInfoOID+".3"
+	storageAllocOID = storageInfoOID+".4"
+	storageTotalOID = storageInfoOID+".5"
+	storageUsedOID = storageInfoOID+".6"
 	disks = []
 	allocationSize = []
 	storageSize = []
@@ -47,19 +52,23 @@ def diskUsage(influxData,hostData,timeStamp):
 	output = snmpWalk(hostData,".1.3.6.1.2.1.25.2.3.1")
 
 	for line in output:
-		if "HOST-RESOURCES-MIB::hrStorageDescr" in line:
+		# Storage Label
+		if ".1.3.6.1.2.1.25.2.3.1.3" in line:
 			result = re.findall(r'\: (.*)',line)
 			disks.append(str(result[0]))
 			pass
-		if "HOST-RESOURCES-MIB::hrStorageAllocationUnits" in line:
+		# Allocation Size
+		if ".1.3.6.1.2.1.25.2.3.1.4" in line:
 			result = re.findall(r'\: (\d*)',line)
 			allocationSize.append(int(result[0]))
 			pass
-		if "HOST-RESOURCES-MIB::hrStorageSize" in line:
+		# Storage total size
+		if ".1.3.6.1.2.1.25.2.3.1.5" in line:
 			result = re.findall(r'\: (\d*)',line)
 			storageSize.append(int(result[0]))
 			pass
-		if "HOST-RESOURCES-MIB::hrStorageUsed" in line:
+		# Storage used
+		if ".1.3.6.1.2.1.25.2.3.1.6" in line:
 			result = re.findall(r'\: (\d*)',line)
 			storageUsed.append(int(result[0]))
 			pass
@@ -80,17 +89,20 @@ def diskUsage(influxData,hostData,timeStamp):
 	pass
 
 def diskTemp(influxData,hostData,timeStamp):
+	diskInfoOID = ".1.3.6.1.4.1.6574.2.1.1"
+	diskLabelOID = diskInfoOID+".2"
+	diskTempOID = diskInfoOID+".6"
 	disks = []
 	temps = []
 
-	output = snmpWalk(hostData,".1.3.6.1.4.1.6574.2")
+	output = snmpWalk(hostData,diskInfoOID)
 
 	for line in output:
-		if "6574.2.1.1.2" in line:
+		if diskLabelOID in line:
 			result = re.findall(r'\"(.*)\"',line)
 			disks.append(result[0])
 			pass
-		if "6574.2.1.1.6" in line:
+		if diskTempOID in line:
 			result = re.findall(r'\: (\d*)',line)
 			temps.append(result[0])
 			pass
