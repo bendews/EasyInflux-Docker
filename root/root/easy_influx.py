@@ -1,5 +1,10 @@
 import yaml
 import requests
+import logging
+import os
+import time
+import datetime
+import math
 
 import esx_snmp
 import synology_snmp
@@ -9,20 +14,10 @@ import misc_ipmi
 import host_classes as host
 import handlers as func
 
-import time
-import datetime
-import math
-
-import os
-
-
-
-
-# starttime=time.time()
-
 SECONDS = 30.0
 
 currentDirectory = os.path.dirname(os.path.abspath(__file__))
+logging.basicConfig(level=logging.DEBUG)
 
 def roundTimeToSeconds(unixTime,secondsToRound):
 	return int(round(unixTime / secondsToRound) * secondsToRound)
@@ -34,14 +29,14 @@ with open(currentDirectory+"/../config/config.yaml", 'r') as stream:
 		print(exc)
 		
 while True:
-	print("Gathering statistics every "+str(SECONDS)+" seconds")
+	logging.debug("Gathering statistics every "+str(SECONDS)+" seconds")
 	# timeTest = int(round(time.time() / SECONDS) * SECONDS)
 	# timeTest = (math.ceil(time.time() / SECONDS))*SECONDS
 	# timeTest = (math.ceil(time.time() / SECONDS))*SECONDS
 	timeStamp = roundTimeToSeconds(time.time(),SECONDS)
 
-	print("Actual Time:",datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S'))
-	print("Timestamp:",datetime.datetime.fromtimestamp(timeStamp).strftime('%Y-%m-%d %H:%M:%S'))
+	logging.debug("Actual Time:"+datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S'))
+	logging.debug("Timestamp:"+datetime.datetime.fromtimestamp(timeStamp).strftime('%Y-%m-%d %H:%M:%S'))
 
 	INFLUXDB_CONFIG = config["influxdb"]
 	ESXI_HOSTS = config["esxi_hosts"]
@@ -83,7 +78,7 @@ while True:
 		data = data+valueInsertList[length]
 
 
-	print(data)
+	logging.debug(data)
 
 	INFLUX_SERVER = str(INFLUXDB_CONFIG["hostname"])
 	INFLUX_PORT = str(INFLUXDB_CONFIG["port"])
@@ -92,6 +87,6 @@ while True:
 	requests.post(url, data=data,headers={'Content-Type': 'application/octet-stream'},timeout = 3)
 
 	timeToSleep = SECONDS - ((time.time() - timeStamp) % SECONDS)
-	print("Statistics gathered, sleeping for "+str(timeToSleep)+" seconds")
+	logging.info("Statistics gathered, sleeping for "+str(timeToSleep)+" seconds")
 	time.sleep(timeToSleep)
 	pass
