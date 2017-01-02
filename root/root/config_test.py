@@ -17,7 +17,7 @@ SECONDS = 30.0
 def roundTimeToSeconds(unixTime,secondsToRound):
 	return int(round(unixTime / secondsToRound) * secondsToRound)
 
-with open("config.yaml", 'r') as stream:
+with open("../config/config.yaml", 'r') as stream:
 	try:
 		config = yaml.load(stream)
 	except yaml.YAMLError as exc:
