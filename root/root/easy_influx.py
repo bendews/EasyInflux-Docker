@@ -13,16 +13,21 @@ import time
 import datetime
 import math
 
+import os
+
+
 
 
 # starttime=time.time()
 
 SECONDS = 30.0
 
+currentDirectory = os.path.dirname(os.path.abspath(__file__))
+
 def roundTimeToSeconds(unixTime,secondsToRound):
 	return int(round(unixTime / secondsToRound) * secondsToRound)
 
-with open("../config/config.yaml", 'r') as stream:
+with open(currentDirectory+"/../config/config.yaml", 'r') as stream:
 	try:
 		config = yaml.load(stream)
 	except yaml.YAMLError as exc:
