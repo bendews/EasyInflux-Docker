@@ -28,7 +28,7 @@ def snmpWalk(hostData,oid):
 	SNMP_SERVER = hostData['hostname']
 	SNMP_COMMUNITY = hostData['community']
 
-	p = subprocess.run(["snmpwalk", "-v", "1", "-c", SNMP_COMMUNITY, SNMP_SERVER, oid], stdout=subprocess.PIPE)
+	p = subprocess.run(["snmpwalk", "-O", "fn", "-v", "1", "-c", SNMP_COMMUNITY, SNMP_SERVER, oid], stdout=subprocess.PIPE)
 	output = p.stdout.decode('utf8').splitlines()
 	return output
 	pass
