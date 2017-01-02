@@ -27,16 +27,17 @@ def snmpWalk(hostData,oid):
 	SNMP_SERVER = hostData['hostname']
 	SNMP_COMMUNITY = hostData['community']
 
-	p = subprocess.run(["snmpwalk", "-v", "2c", "-c", SNMP_COMMUNITY, SNMP_SERVER, oid], stdout=subprocess.PIPE)
+	p = subprocess.run(["snmpwalk", "-O", "fn", "-v", "2c", "-c", SNMP_COMMUNITY, SNMP_SERVER, oid], stdout=subprocess.PIPE)
 	output = p.stdout.decode('utf8').splitlines()
 	return output
 	pass
 
 def procLoad(influxData,hostData,timeStamp):
+	procOID = ".1.3.6.1.2.1.25.3.3.1.2"
 	i = 0
-	output = snmpWalk(hostData,".1.3.6.1.2.1.25.3.3")
+	output = snmpWalk(hostData,procOID)
 	for line in output:
-		if "HOST-RESOURCES-MIB::hrProcessorLoad" in line:
+		if procOID in line:
 			i += 1
 			cpuCore = "cpu"+str(i)
 			result = re.findall(r'\: (\d*)',line)
@@ -54,13 +55,13 @@ def VMList(influxData,hostData,timeStamp):
 	output = snmpWalk(hostData,".1.3.6.1.4.1.6876.2.1.1")
 
 	for line in output:
-		if "SNMPv2-SMI::enterprises.6876.2.1.1.2." in line:
+		if ".1.3.6.1.4.1.6876.2.1.1.2." in line:
 			result = re.findall(r'\: (.*)',line)
 			result = str(result[0])
 			result = result.replace('"','')
 			vmNames.append(result)
 			pass
-		if "SNMPv2-SMI::enterprises.6876.2.1.1.6." in line:
+		if ".1.3.6.1.4.1.6876.2.1.1.6." in line:
 			result = re.findall(r'\: (.*)',line)
 			result = str(result[0])
 			result = result.replace('"','')
@@ -71,5 +72,5 @@ def VMList(influxData,hostData,timeStamp):
 		binaryState = 1 if state =="powered on" else 0
 		data_VMStates = [hostData['hostname'],name,"vm_state",binaryState]
 		writeData(influxData,data_VMStates,timeStamp)
-		# print(name,state)
+		print(name,state)
 	pass
