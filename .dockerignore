@@ -2,4 +2,5 @@
 .gitignore
 .github
 .gitattributes
+*.gif
 README.md
