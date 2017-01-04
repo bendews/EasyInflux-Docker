@@ -1,16 +1,7 @@
 # EasyInflux
 
-<<<<<<< 7f9bf066c7bc06205d04885b2be5971adeea3a6b
 [![Docker pull](https://img.shields.io/docker/pulls/bendews/easyinflux.svg)](https://hub.docker.com/r/bendews/easyinflux/) 
-=======
-<<<<<<< Updated upstream
-[![Docker pull](https://img.shields.io/docker/pulls/dewso/easyinflux.svg)](https://hub.docker.com/r/dewso/easyinflux/) 
->>>>>>> Include link to Docker Hub
 [![Github issues](https://img.shields.io/github/issues/bendews/EasyInflux-Docker.svg)](https://github.com/bendews/EasyInflux-Docker/issues) [![License](https://img.shields.io/github/license/bendews/EasyInflux-Docker.svg)](https://github.com/bendews/EasyInflux-Docker/blob/master/LICENSE)
-=======
-[![Docker pull](https://img.shields.io/docker/pulls/bendews/easyinflux.svg)](https://hub.docker.com/r/bendews/easyinflux/) 
-[![Github issues](https://img.shields.io/github/issues/bendews/EasyInflux-Docker.svg)](https://github.com/bendews/EasyInflux-Docker/issues) [![License](https://img.shields.io/github/license/bendews/EasyInflux-Docker.svg)](https://github.com/bendews/EasyInflux-Docker/blob/master/LICENSE.txt)
->>>>>>> Stashed changes
 
 A [Docker](https://www.docker.com) container that simplifies the collection of many common SNMP and IPMI data points to insert into InfluxDB. 
 
@@ -78,12 +69,4 @@ Option descriptions are as follows:
 
 Note that **ALL** values should be string escaped (I.E, be within "quotation marks")
 
-<<<<<<< 7f9bf066c7bc06205d04885b2be5971adeea3a6b
-## [License](https://github.com/bendews/EasyInflux-Docker/blob/master/LICENSE)
-=======
-<<<<<<< Updated upstream
-## [License]()
-=======
 ## [License](https://github.com/bendews/EasyInflux-Docker/blob/master/LICENSE.txt)
->>>>>>> Stashed changes
->>>>>>> Include link to Docker Hub
