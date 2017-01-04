@@ -32,33 +32,33 @@ A sample configuration file is located at `root/sampleConfig.yaml`.
 Please view the sample configuration file to get a better understanding of its options.
 Option descriptions are as follows:
 
-##### REQUIRED - influxdb
+#### REQUIRED - influxdb
 |Key            |Description                                                                                                         |
 |:--------------|:-------------------------------------------------------------------------------------------------------------------|
 |hostname       |The hostname (or IP address) of the influxDB Server                                                                 |
 |port           |The API port of the influxDB server (usually 8086)                                                                  |
 |database       |The database for EasyInflux to write data to (a new database is recommended)                                        |
 |insert_interval|The time interval in seconds that values are collected and sent to InfluxDB (a value of 30 or higher is recommended)|
-##### Optional - esxi_hosts
+#### Optional - esxi_hosts
 |Key            |Description                                                                                                         |
 :---------------|:-------------------------------------------------------------------------------------------------------------------|
 |hostname       |The hostname (or IP address) of the ESXi Server                                                                     |
 |snmp_community |The SNMP community string for this host                                                                             |
 |snmp_version   |The SNMP version for this host ("1" or "2c" supported at this time)                                                 |
-##### Optional - synology_hosts
+#### Optional - synology_hosts
 |Key            |Description                                                                                                         |
 :---------------|:-------------------------------------------------------------------------------------------------------------------|
 |hostname       |The hostname (or IP address) of the Synology Server                                                                 |
 |snmp_community |The SNMP community string for this host                                                                             |
 |snmp_version   |The SNMP version for this host ("1" or "2c" supported at this time)                                                 |
 |volumes        |The volumes on the Synology host to be reported ("volume1", "volume2" etc.)                                         |
-##### Optional - ipmi_hosts
+#### Optional - ipmi_hosts
 |Key            |Description                                                                                                         |
 :---------------|:-------------------------------------------------------------------------------------------------------------------|
 |hostname       |The hostname (or IP address) of the IPMI supported device                                                           |
 |ipmi_username  |The IPMI username for this host                                                                                     |
 |ipmi_password  |The IPMI password for this host                                                                                     |
-##### Optional - ups_hosts
+#### Optional - ups_hosts
 |Key            |Description                                                                                                         |
 :---------------|:-------------------------------------------------------------------------------------------------------------------|
 |hostname       |The hostname (or IP address) of the UPS SNMP interface                                                              |
