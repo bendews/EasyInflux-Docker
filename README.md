@@ -7,7 +7,7 @@ A [Docker](https://www.docker.com) container that simplifies the collection of m
 
 Initial inspiration drawn from the work done by [dencur](https://www.reddit.com/u/dencur) in [this blog post](https://denlab.io/setup-a-wicked-grafana-dashboard-to-monitor-practically-anything/)
 
-[View image on Docker](https://hub.docker.com/r/bendews/easyinflux/)
+[View image on Docker Hub](https://hub.docker.com/r/bendews/easyinflux/)
 
 ##### Preview of supported stats
 
