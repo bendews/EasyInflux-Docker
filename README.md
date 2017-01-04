@@ -1,6 +1,6 @@
 # EasyInflux
 
-[![Docker pull](https://img.shields.io/docker/pulls/dewso/easyinflux.svg)](https://hub.docker.com/r/dewso/easyinflux/) 
+[![Docker pull](https://img.shields.io/docker/pulls/bendews/easyinflux.svg)](https://hub.docker.com/r/bendews/easyinflux/) 
 [![Github issues](https://img.shields.io/github/issues/bendews/EasyInflux-Docker.svg)](https://github.com/bendews/EasyInflux-Docker/issues) [![License](https://img.shields.io/github/license/bendews/EasyInflux-Docker.svg)](https://github.com/bendews/EasyInflux-Docker/blob/master/LICENSE)
 
 A [Docker](https://www.docker.com) container that simplifies the collection of many common SNMP and IPMI data points to insert into InfluxDB. 
@@ -22,7 +22,7 @@ All you need:
 docker run -d --name easy-influx \
 -v [PATH TO CONFIG FILE]:/config/config.yaml:ro \
 -v [PATH TO MIB FOLDER]:/usr/share/snmp/mibs:ro \
-dewso/easyinflux
+bendews/easyinflux
 ```
 
 
@@ -67,4 +67,4 @@ Option descriptions are as follows:
 
 Note that **ALL** values should be string escaped (I.E, be within "quotation marks")
 
-## [License]()
+## [License](https://github.com/bendews/EasyInflux-Docker/blob/master/LICENSE)
