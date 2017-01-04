@@ -69,16 +69,16 @@ while True:
 	logging.debug("Actual Time:"+datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S'))
 	logging.debug("Timestamp for data:"+datetime.datetime.fromtimestamp(timeStamp).strftime('%Y-%m-%d %H:%M:%S'))
 
-	if config["esxi_hosts"]:
+	if "esxi_hosts" in config:
 		ESXI_HOSTS = config["esxi_hosts"]
 		pass
-	if config["ipmi_hosts"]:
+	if "ipmi_hosts" in config:
 		IPMI_HOSTS = config["ipmi_hosts"]
 		pass
-	if config["synology_hosts"]:
+	if "synology_hosts" in config:
 		SYNOLOGY_HOSTS = config["synology_hosts"]
 		pass
-	if config["ups_hosts"]:
+	if "ups_hosts" in config:
 		UPS_HOSTS = config["ups_hosts"]
 		pass
 
