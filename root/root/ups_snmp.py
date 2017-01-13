@@ -13,6 +13,8 @@ import handlers as func
 def upsPower(upsHost,valueInsertList,timeStamp):
 	upsInfoOID = "1.3.6.1.2.1.33.1"
 	upsWattsOID = upsInfoOID+".4.4.1.4.1"
+	upsMinutesOID = upsInfoOID+".2.3.0"
+	upsChargeOID = upsInfoOID+".2.4.0"
 
 	hostname = upsHost.hostname
 	snmpCommunity = upsHost.snmpCommunity
@@ -25,6 +27,18 @@ def upsPower(upsHost,valueInsertList,timeStamp):
 			result = re.findall(r'\: (\d*)',line)
 			upsPower = str(result[0])
 			data_upsPower = [hostname,"ActivePower","ups_power",upsPower]
+			valueInsertList.append(func.getPostData(data_upsPower,timeStamp))
+		pass
+		if upsMinutesOID in line:
+			result = re.findall(r'\: (\d*)',line)
+			upsPower = str(result[0])
+			data_upsPower = [hostname,"MinutesRemaining","ups_power",upsPower]
+			valueInsertList.append(func.getPostData(data_upsPower,timeStamp))
+		pass
+		if upsChargeOID in line:
+			result = re.findall(r'\: (\d*)',line)
+			upsPower = str(result[0])
+			data_upsPower = [hostname,"ChargePercent","ups_power",upsPower]
 			valueInsertList.append(func.getPostData(data_upsPower,timeStamp))
 		pass
 	pass
