@@ -1,5 +1,5 @@
 # EasyInflux
-
+[![Image Size](https://images.microbadger.com/badges/image/bendews/easyinflux.svg)](https://hub.docker.com/r/bendews/easyinflux/)
 [![Docker pull](https://img.shields.io/docker/pulls/bendews/easyinflux.svg)](https://hub.docker.com/r/bendews/easyinflux/) 
 [![Github issues](https://img.shields.io/github/issues/bendews/EasyInflux-Docker.svg)](https://github.com/bendews/EasyInflux-Docker/issues) [![License](https://img.shields.io/github/license/bendews/EasyInflux-Docker.svg)](https://github.com/bendews/EasyInflux-Docker/blob/master/LICENSE)
 
