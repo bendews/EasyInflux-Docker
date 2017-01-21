@@ -16,7 +16,7 @@ def sizeInGB(totalSize,allocSize):
 	return result
 	pass
 
-def diskUsage(synHost,valueInsertList,timeStamp):
+def diskUsage(synHost,influx):
 	storageInfoOID = ".1.3.6.1.2.1.25.2.3.1"
 	storageLabelOID = storageInfoOID+".3"
 	storageAllocOID = storageInfoOID+".4"
@@ -33,7 +33,7 @@ def diskUsage(synHost,valueInsertList,timeStamp):
 	snmpVersion = synHost.snmpVersion
 	volumeList = synHost.volumeList
 
-	output = func.snmpWalk(hostname,snmpCommunity,snmpVersion,storageInfoOID)
+	output = synHost.snmpWalk(storageInfoOID)
 
 	for line in output:
 		# Storage Label
@@ -64,15 +64,14 @@ def diskUsage(synHost,valueInsertList,timeStamp):
 		for volume in volumeList:
 			if volume in disk:
 				data_totalInTB = [hostname,volume,"total_storage",totalInTB]
-				valueInsertList.append(func.getPostData(data_totalInTB,timeStamp))
+				influx.append_measurement(data_totalInTB)
 				data_usedInTB = [hostname,volume,"used_storage",usedInTB]
-				valueInsertList.append(func.getPostData(data_usedInTB,timeStamp))
+				influx.append_measurement(data_usedInTB)
 				pass
 			pass
 	pass
-	return valueInsertList
 
-def diskTemp(synHost,valueInsertList,timeStamp):
+def diskTemp(synHost,influx):
 	diskInfoOID = ".1.3.6.1.4.1.6574.2.1.1"
 	diskLabelOID = diskInfoOID+".2"
 	diskTempOID = diskInfoOID+".6"
@@ -85,7 +84,7 @@ def diskTemp(synHost,valueInsertList,timeStamp):
 	snmpVersion = synHost.snmpVersion
 	volumeList = synHost.volumeList
 
-	output = func.snmpWalk(hostname,snmpCommunity,snmpVersion,diskInfoOID)
+	output = synHost.snmpWalk(diskInfoOID)
 
 	for line in output:
 		if diskLabelOID in line:
@@ -99,6 +98,5 @@ def diskTemp(synHost,valueInsertList,timeStamp):
 		pass
 	for disk,temp in zip(disks,temps):
 		data_diskTemp = [hostname,disk,"temperature",temp]
-		valueInsertList.append(func.getPostData(data_diskTemp,timeStamp))
+		influx.append_measurement(data_diskTemp)
 	pass
-	return valueInsertList

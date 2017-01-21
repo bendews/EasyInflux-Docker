@@ -12,6 +12,7 @@ import os
 import time
 import datetime
 import math
+import argparse
 
 import esx_snmp
 import synology_snmp
@@ -21,99 +22,162 @@ import misc_ipmi
 import host_classes as host
 import handlers as func
 
+from influxdb import InfluxDBClient
+from influxdb.exceptions import InfluxDBClientError, InfluxDBServerError
+
 
 currentDirectory = os.path.dirname(os.path.abspath(__file__))
 logging.basicConfig(level=logging.DEBUG)
+	
+class influxDB():
 
-# Round unix time to closest interval period
-def roundTimeToSeconds(unixTime,secondsToRound):
-	return int(round(unixTime / secondsToRound) * secondsToRound)
+	def __init__(self,influx_config):
+		super().__init__()
+		self.output = True
+		self.measurementList = []
+		self.influx_config = influx_config
+		self.timestamp = self.get_timestamp()
+		self.influx_client = InfluxDBClient(
+			host=self.influx_config["hostname"],
+			port=self.influx_config["port"],
+			database=self.influx_config["database"]
+		)
 
-# Convert list of InfluxDB data into string for POST request
-def listToInfluxDBString(list):
-	length = len(list) - 1
-	influxDBString = ""
-	if length == 0:
-		influxDBString = list[0]
-	else:
-		for value in list[:-1]:
-			influxDBString = influxDBString+value+"\n"
+	def append_measurement(self,measurement):		
+		host = str(measurement[0]).replace(" ", "")
+		device = str(measurement[1]).replace(" ", "")
+		item = str(measurement[2]).replace(" ", "")
+		try:
+			value = int(measurement[3])
+		except ValueError:
+			value = int(float(measurement[3]))
+			pass
+		self.measurementList.append({
+					'measurement': item+"_TEST",
+					'fields': {
+						'value': value
+					},
+					"time": self.timestamp,
+					'tags': {
+						'device': device,
+						'host': host
+					}
+				})
 		pass
-		influxDBString = influxDBString+list[length]
-	return influxDBString
 
-# Load config file
-with open(currentDirectory+"/../config/config.yaml", 'r') as stream:
-	try:
-		config = yaml.load(stream)
-	except yaml.YAMLError as err:
-		logging.error(err)
-		exit(1)
-try:
-	# Assign InfluxDB Variables
-	INFLUXDB_CONFIG = config["influxdb"]
-	# Interval to run script
-	INSERT_INTERVAL = float(INFLUXDB_CONFIG["insert_interval"])
-	# hostname of influxDB server
-	INFLUX_SERVER = str(INFLUXDB_CONFIG["hostname"])
-	# API port of influxDB server
-	INFLUX_PORT = str(INFLUXDB_CONFIG["port"])
-	# Database for values to be inserted into
-	INFLUX_DB = str(INFLUXDB_CONFIG["database"])
-	# URL used for POST request
-	INFLUX_URL = "http://"+INFLUX_SERVER+":"+INFLUX_PORT+"/write?db="+INFLUX_DB+"&precision=s"
-except (KeyError,TypeError,NameError) as err:
-	logging.error("Please check your configuration file! An error occurred whilst parsing:",err)
-	exit(1)
+	# Round unix time to closest interval period
+	def get_timestamp(self):
+		unixTime = time.time()
+		secondsToRound = float(self.influx_config["insert_interval"])
+		return int(round(unixTime / secondsToRound) * secondsToRound)
+		pass
+
+	def write_data(self):
+		print(self.measurementList)
+		try:
+			self.influx_client.write_points(self.measurementList,time_precision="s")
+		except (InfluxDBClientError, ConnectionError, InfluxDBServerError) as e:
+			if hasattr(e, 'code') and e.code == 404:
+				self.influx_client.create_database(self.influx_config["database"])
+				self.influx_client.write_points(self.measurementList)
+				return
+			print('Failed to write data to InfluxDB', 'error')
+			print('ERROR: Failed To Write To InfluxDB')
+			print(e)
+		print('Written To Influx: {}'.format(self.measurementList), 'debug')
 
 
-		
-while True:
-	# Round insert timestamp to interval period
-	timeStamp = roundTimeToSeconds(time.time(),INSERT_INTERVAL)
-	logging.debug("Gathering statistics every "+str(INSERT_INTERVAL)+" seconds")
-	logging.debug("Actual Time:"+datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S'))
-	logging.debug("Timestamp for data:"+datetime.datetime.fromtimestamp(timeStamp).strftime('%Y-%m-%d %H:%M:%S'))
+class easyInfluxCollector(object):
 
-	# Assign hosts in configuration to Lists
-	ESXI_HOSTS = config.get('esxi_hosts',[])
-	IPMI_HOSTS = config.get('ipmi_hosts',[])
-	SYNOLOGY_HOSTS = config.get('synology_hosts',[])
-	UPS_HOSTS = config.get('ups_hosts',[])
+	def __init__(self):
+		super().__init__()
 
-	valueList = []
+		self.config = configManager()
 
-	# Loop through each host and gather data
-	for hostData in ESXI_HOSTS:
-		esxHost = host.EsxHost(hostData["hostname"],hostData["snmp_community"],hostData["snmp_version"])
-		valueList = esx_snmp.procLoad(esxHost,valueList,timeStamp)
-		valueList = esx_snmp.VMList(esxHost,valueList,timeStamp)
+		self.INFLUX_CONFIG = self.config.INFLUX_CONFIG
+		self.INSERT_INTERVAL = float(self.INFLUX_CONFIG["insert_interval"])
+		self.ESXI_HOSTS = self.config.ESXI_HOSTS
+		self.IPMI_HOSTS = self.config.IPMI_HOSTS
+		self.SYNOLOGY_HOSTS = self.config.SYNOLOGY_HOSTS
+		self.UPS_HOSTS = self.config.UPS_HOSTS
 
-	for hostData in IPMI_HOSTS:
-		ipmiHost = host.IpmiHost(hostData["hostname"],hostData["ipmi_username"],hostData["ipmi_password"])
-		valueList = misc_ipmi.fanTempMeasure(ipmiHost,valueList,timeStamp)
+	def get_esx_stats(self):
+		for hostData in self.ESXI_HOSTS:
+			esxHost = host.EsxHost(hostData["hostname"],hostData["snmp_community"],hostData["snmp_version"])
+			esx_snmp.procLoad(esxHost,self.influx)
+			esx_snmp.VMList(esxHost,self.influx)
+		pass
 
-	for hostData in SYNOLOGY_HOSTS:
-		volumes = hostData.get('volumes',[])
-		synHost = host.SynologyHost(hostData["hostname"],hostData["snmp_community"],hostData["snmp_version"],volumes)
-		valueList = synology_snmp.diskUsage(synHost,valueList,timeStamp)
-		valueList = synology_snmp.diskTemp(synHost,valueList,timeStamp)
+	def get_ipmi_stats(self):
+		for hostData in self.IPMI_HOSTS:
+			ipmiHost = host.IpmiHost(hostData["hostname"],hostData["ipmi_username"],hostData["ipmi_password"])
+			misc_ipmi.fanTempMeasure(ipmiHost,self.influx)
+		pass
+	def get_synology_stats(self):
+		for hostData in self.SYNOLOGY_HOSTS:
+			volumes = hostData.get('volumes',[])
+			synHost = host.SynologyHost(hostData["hostname"],hostData["snmp_community"],hostData["snmp_version"],volumes)
+			synology_snmp.diskUsage(synHost,self.influx)
+			synology_snmp.diskTemp(synHost,self.influx)
+		pass
+	def get_ups_stats(self):
+		for hostData in self.UPS_HOSTS:
+			upsHost = host.UpsHost(hostData["hostname"],hostData["snmp_community"],hostData["snmp_version"])
+			ups_snmp.upsPower(upsHost,self.influx)
+		pass
 
-	for hostData in UPS_HOSTS:
-		upsHost = host.UpsHost(hostData["hostname"],hostData["snmp_community"],hostData["snmp_version"])
-		valueList = ups_snmp.upsPower(upsHost,valueList,timeStamp)
+	def run(self):
+		print('Starting Data Collection Loop \n ')
+		while True:
+			self.influx = influxDB(self.INFLUX_CONFIG)
 
+			logging.debug("Gathering statistics every "+str(self.INSERT_INTERVAL)+" seconds")
+			logging.debug("Actual Time:"+datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S'))
+			logging.debug("Timestamp for data:"+datetime.datetime.fromtimestamp(self.influx.timestamp).strftime('%Y-%m-%d %H:%M:%S'))
 
-	if valueList:
-		# Convert list of insert data into string for POST request
-		INFLUX_DATA = listToInfluxDBString(valueList)
-		# Print collected data
-		logging.debug(INFLUX_DATA)
-		# Post data to InfluxDB
-		requests.post(INFLUX_URL, data=INFLUX_DATA,headers={'Content-Type': 'application/octet-stream'},timeout = 3)
+			self.get_esx_stats()
+			self.get_ipmi_stats()
+			self.get_synology_stats()
+			self.get_ups_stats()
 
-	# Delay data collection loop to match interval period
-	timeToSleep = INSERT_INTERVAL - ((time.time() - timeStamp) % INSERT_INTERVAL)
-	logging.info("Statistics gathered, sleeping for "+str(timeToSleep)+" seconds")
-	time.sleep(timeToSleep)
-	pass
+			self.influx.write_data()
+
+			# Delay data collection loop to match interval period
+			timeToSleep = self.INSERT_INTERVAL - ((time.time() - self.influx.timestamp) % self.INSERT_INTERVAL)
+			logging.info("Statistics gathered, sleeping for "+str(timeToSleep)+" seconds")
+			time.sleep(timeToSleep)
+			pass
+
+class configManager():
+
+	def __init__(self):
+		print('Loading Configuration File')
+		config_file = currentDirectory+"/../config/config.yaml"
+		with open(config_file, 'r') as stream:
+			try:
+				self.config = yaml.load(stream)
+			except yaml.YAMLError as err:
+				logging.error(err)
+				exit(1)
+		self._load_config_values()
+
+	def _load_config_values(self):
+		try:
+			self.INFLUX_CONFIG = self.config["influxdb"]
+			self.ESXI_HOSTS = self.config.get('esxi_hosts',[])
+			self.IPMI_HOSTS = self.config.get('ipmi_hosts',[])
+			self.SYNOLOGY_HOSTS = self.config.get('synology_hosts',[])
+			self.UPS_HOSTS = self.config.get('ups_hosts',[])
+		except (KeyError,TypeError,NameError) as err:
+			logging.error("Please check your configuration file! An error occurred whilst parsing:",err)
+			exit(1)
+
+def main():
+	parser = argparse.ArgumentParser(description="Easy to use solution for inputting common data metrics into InfluxDB")
+	# parser.add_argument('--config', default='config.ini', dest='config', help='Specify a custom location for the config file')
+	args = parser.parse_args()
+	collector = easyInfluxCollector()
+	collector.run()
+
+if __name__ == '__main__':
+	main()

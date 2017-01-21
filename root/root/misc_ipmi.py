@@ -10,14 +10,14 @@ import re
 
 import handlers as func
 
-def fanTempMeasure(ipmiHost,valueInsertList,timeStamp):
+def fanTempMeasure(ipmiHost,influx):
 	measurements = []
 
 	hostname = ipmiHost.hostname
 	username = ipmiHost.username
 	password = ipmiHost.password
 
-	output = func.ipmiTool(hostname,username,password)
+	output = ipmiHost.ipmiTool()
 
 	for line in output:
 		line = line.split("|")
@@ -40,8 +40,8 @@ def fanTempMeasure(ipmiHost,valueInsertList,timeStamp):
 			item = "temperature"
 
 		data_fanTemp = [hostname,device,item,value]
-		valueInsertList.append(func.getPostData(data_fanTemp,timeStamp))
+		influx.append_measurement(data_fanTemp)
 	pass
-	return valueInsertList
+	return influx
 
 

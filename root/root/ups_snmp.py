@@ -10,7 +10,7 @@ import re
 
 import handlers as func
 
-def upsPower(upsHost,valueInsertList,timeStamp):
+def upsPower(upsHost,influx):
 	upsInfoOID = "1.3.6.1.2.1.33.1"
 	upsWattsOID = upsInfoOID+".4.4.1.4.1"
 	upsMinutesOID = upsInfoOID+".2.3.0"
@@ -20,26 +20,25 @@ def upsPower(upsHost,valueInsertList,timeStamp):
 	snmpCommunity = upsHost.snmpCommunity
 	snmpVersion = upsHost.snmpVersion
 
-	output = func.snmpWalk(hostname,snmpCommunity,snmpVersion,upsInfoOID)
+	output = upsHost.snmpWalk(upsInfoOID)
 
 	for line in output:
 		if upsWattsOID in line:
 			result = re.findall(r'\: (\d*)',line)
 			upsPower = str(result[0])
 			data_upsPower = [hostname,"ActivePower","ups_power",upsPower]
-			valueInsertList.append(func.getPostData(data_upsPower,timeStamp))
+			influx.append_measurement(data_upsPower)
 		pass
 		if upsMinutesOID in line:
 			result = re.findall(r'\: (\d*)',line)
 			upsPower = str(result[0])
 			data_upsPower = [hostname,"MinutesRemaining","ups_power",upsPower]
-			valueInsertList.append(func.getPostData(data_upsPower,timeStamp))
+			influx.append_measurement(data_upsPower)
 		pass
 		if upsChargeOID in line:
 			result = re.findall(r'\: (\d*)',line)
 			upsPower = str(result[0])
 			data_upsPower = [hostname,"ChargePercent","ups_power",upsPower]
-			valueInsertList.append(func.getPostData(data_upsPower,timeStamp))
+			influx.append_measurement(data_upsPower)
 		pass
 	pass
-	return valueInsertList

@@ -10,7 +10,7 @@ import re
 
 import handlers as func
 
-def procLoad(esxHost,valueInsertList,timeStamp):
+def procLoad(esxHost,influx):
 	procOID = ".1.3.6.1.2.1.25.3.3.1.2"
 	i = 0
 
@@ -19,7 +19,7 @@ def procLoad(esxHost,valueInsertList,timeStamp):
 	snmpVersion = esxHost.snmpVersion
 
 
-	output = func.snmpWalk(hostname,snmpCommunity,snmpVersion,procOID)
+	output = esxHost.snmpWalk(procOID)
 	for line in output:
 		if procOID in line:
 			i += 1
@@ -28,12 +28,11 @@ def procLoad(esxHost,valueInsertList,timeStamp):
 			if result:
 				loadValue = str(result[0])
 				data_procLoad = [hostname,cpuCore,"cpu_load",loadValue]
-				valueInsertList.append(func.getPostData(data_procLoad,timeStamp))
+				influx.append_measurement(data_procLoad)
 			pass
 		pass
-	return valueInsertList
 
-def VMList(esxHost,valueInsertList,timeStamp):
+def VMList(esxHost,influx):
 	vmInfoOID = ".1.3.6.1.4.1.6876.2.1.1"
 	vmLabelOID = vmInfoOID+".2"
 	vmStateOID = vmInfoOID+".6"
@@ -44,7 +43,7 @@ def VMList(esxHost,valueInsertList,timeStamp):
 	snmpCommunity = esxHost.snmpCommunity
 	snmpVersion = esxHost.snmpVersion
 
-	output = func.snmpWalk(hostname,snmpCommunity,snmpVersion,vmInfoOID)
+	output = esxHost.snmpWalk(vmInfoOID)
 
 	for line in output:
 		if vmLabelOID in line:
@@ -63,6 +62,5 @@ def VMList(esxHost,valueInsertList,timeStamp):
 	for name,state in zip(vmNames,powerStates):
 		binaryState = 1 if state =="powered on" else 0
 		data_VMStates = [hostname,name,"vm_state",binaryState]
-		valueInsertList.append(func.getPostData(data_VMStates,timeStamp))
+		influx.append_measurement(data_VMStates)
 	pass
-	return valueInsertList
